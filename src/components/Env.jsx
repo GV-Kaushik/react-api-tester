@@ -42,7 +42,6 @@ export default function EnvManager({ envs, setEnvs }) {
     <div className="bg-white rounded-2xl shadow p-5 mb-6">
       <h3 className="font-bold mb-3">Environment Variables</h3>
 
-      {/* INPUTS */}
       <div className="flex flex-col md:flex-row gap-2 mb-4">
         <input
           className="border p-2 rounded md:w-40 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -67,7 +66,6 @@ export default function EnvManager({ envs, setEnvs }) {
         </button>
       </div>
 
-      {/* LIST */}
       {Object.keys(envs).length === 0 ? (
         <p className="text-sm text-gray-500">No environment variables added.</p>
       ) : (
