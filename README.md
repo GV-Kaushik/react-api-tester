@@ -58,7 +58,7 @@ npm run dev
 ```
 ### 4.Open your browser at 
 ```dts
-https://react-api-tester-seven.vercel.app/
+http://localhost:5173
 ```
 
 ---
