@@ -21,7 +21,13 @@ export default function RequestForm({
 
   const showBody = ["POST", "PUT", "PATCH"].includes(method);
 
-  const finalEnvUrl = (u) => u.replace(/{{(.*?)}}/g, (_, k) => envs[k] || "");
+  const finalEnvUrl = (u) =>
+    u.replace(/{{(.*?)}}/g, (_, k) => {
+      if (!(k in envs)) {
+        throw new Error(`Environment variable ${k} is not defined`);
+      }
+      return envs[k];
+    });
 
   async function sendRequest() {
     if (!url.trim()) {
@@ -37,7 +43,14 @@ export default function RequestForm({
       };
       if (showBody && body.trim()) options.body = body;
 
-      const finalUrl = finalEnvUrl(url).replace(/^["']|["']$/g, "");
+      let finalUrl;
+      try {
+        finalUrl = finalEnvUrl(url).replace(/^["']|["']$/g, "");
+      } catch (err) {
+        setResponse({ error: err.message });
+        return;
+      }
+
       const res = await fetch(finalUrl, options);
       const time = Date.now() - start;
 
