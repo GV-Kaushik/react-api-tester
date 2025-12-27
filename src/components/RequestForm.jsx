@@ -1,4 +1,5 @@
 import { useState } from "react";
+import QueryParams from "./QueryParams";
 
 const methodColors = {
   GET: "bg-green-600",
@@ -18,16 +19,26 @@ export default function RequestForm({
   const [url, setUrl] = useState("");
   const [body, setBody] = useState("");
   const [open, setOpen] = useState(false);
+  const [queryParams, setQueryParams] = useState([]);
 
   const showBody = ["POST", "PUT", "PATCH"].includes(method);
 
-  const finalEnvUrl = (u) =>
+  const resolveEnv = (u) =>
     u.replace(/{{(.*?)}}/g, (_, k) => {
-      if (!(k in envs)) {
-        throw new Error(`Environment variable ${k} is not defined`);
-      }
+      if (!envs[k]) throw new Error(`Env variable ${k} not defined`);
       return envs[k];
     });
+
+  function bulidStringAfterQuery() {
+    const validParams = queryParams.filter((p) => p.key.trim());
+
+    if (validParams.length === 0) return "";
+
+    const search = new URLSearchParams();
+    validParams.forEach((p) => search.append(p.key, p.value));
+
+    return `?${search.toString()}`;
+  }
 
   async function sendRequest() {
     if (!url.trim()) {
@@ -37,18 +48,22 @@ export default function RequestForm({
 
     try {
       const start = Date.now();
+
+      const finalUrl =
+        resolveEnv(url).replace(/^["']|["']$/g, "") + bulidStringAfterQuery();
+
+      if (!finalUrl.startsWith("http")) {
+        setResponse({ error: "Invalid URL" });
+        return;
+      }
+
       const options = {
         method,
         headers: { "Content-Type": "application/json" },
       };
-      if (showBody && body.trim()) options.body = body;
 
-      let finalUrl;
-      try {
-        finalUrl = finalEnvUrl(url).replace(/^["']|["']$/g, "");
-      } catch (err) {
-        setResponse({ error: err.message });
-        return;
+      if (showBody && body.trim()) {
+        options.body = body;
       }
 
       const res = await fetch(finalUrl, options);
@@ -65,79 +80,78 @@ export default function RequestForm({
       const result = { status: res.status, time, data };
       setResponse(result);
 
-      const req = { method, url: finalUrl, body: showBody ? body : "" };
-      setLastRequest(req);
-      addToHistory(req);
+      setLastRequest({
+        method,
+        url: finalUrl,
+        body: showBody ? body : "",
+      });
+
+      addToHistory({ method, url: finalUrl });
     } catch (err) {
       setResponse({ error: err.message });
     }
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-5 mb-6">
-      <div className="flex flex-col md:flex-row gap-2 mb-4 items-center">
-        <div className="relative w-full md:w-36">
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className={`w-full flex justify-between items-center px-4 py-2 rounded-lg
-              text-white font-bold transition-all duration-200
-              hover:brightness-110 active:scale-95
-              ${methodColors[method]}`}
-          >
-            {method}
-            <span
-              className={`transition-transform ${open ? "rotate-180" : ""}`}
+    <>
+      <div className="bg-white rounded-2xl shadow-lg p-5 mb-6">
+        <div className="flex flex-col md:flex-row gap-2 mb-4 items-center">
+          <div className="relative w-full md:w-36">
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className={`w-full flex justify-between items-center px-4 py-2 rounded-lg
+                text-white font-bold transition-all
+                hover:brightness-110 active:scale-95
+                ${methodColors[method]}`}
             >
-              ▾
-            </span>
-          </button>
+              {method} ▾
+            </button>
 
-          {open && (
-            <div className="absolute z-20 mt-2 w-full bg-gray-900 rounded-xl shadow-2xl overflow-hidden animate-dropdown">
-              {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
-                <div
-                  key={m}
-                  onClick={() => {
-                    setMethod(m);
-                    setOpen(false);
-                  }}
-                  className={`px-4 py-2 text-white cursor-pointer
-                    hover:bg-gray-700 transition
-                    ${method === m ? "bg-gray-700" : ""}`}
-                >
-                  {m}
-                </div>
-              ))}
-            </div>
-          )}
+            {open && (
+              <div className="absolute z-20 mt-2 w-full bg-gray-900 rounded-xl shadow-2xl">
+                {Object.keys(methodColors).map((m) => (
+                  <div
+                    key={m}
+                    onClick={() => {
+                      setMethod(m);
+                      setOpen(false);
+                    }}
+                    className="px-4 py-2 text-white hover:bg-gray-700 cursor-pointer"
+                  >
+                    {m}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <input
+            className="flex-1 border px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-400"
+            placeholder="https://api.example.com or {{BASE_URL}}/posts"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+
+          <button
+            onClick={sendRequest}
+            className="bg-black text-white px-6 py-2 rounded-lg font-semibold
+              hover:bg-gray-800 hover:scale-[1.02] transition"
+          >
+            Send
+          </button>
         </div>
 
-        <input
-          className="flex-1 border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          placeholder="https://api.example.com or {{BASE_URL}}/posts/1"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-
-        <button
-          onClick={sendRequest}
-          className="bg-black text-white px-6 py-2 rounded-lg font-semibold
-            hover:bg-gray-800 hover:scale-[1.02] active:scale-95
-            transition w-full md:w-auto"
-        >
-          Send
-        </button>
+        {showBody && (
+          <textarea
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-400"
+            rows="6"
+            placeholder="Request JSON Body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+        )}
       </div>
-
-      {showBody && (
-        <textarea
-          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          rows="6"
-          placeholder="Request JSON Body"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-      )}
-    </div>
+      <QueryParams params={queryParams} setParams={setQueryParams} />
+    </>
   );
 }

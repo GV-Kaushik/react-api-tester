@@ -1,7 +1,7 @@
 # Lightweight API Client
 
 A browser-based, Postman-inspired API testing tool built using **React**, **Vite**, and **Tailwind CSS**.  
-This application allows developers to send HTTP requests, inspect responses, manage environment variables, and generate request code snippets — all directly from the browser.
+This application allows developers to send HTTP requests, inspect responses, manage environment variables, use query parameters, and generate request code snippets — all directly from the browser.
 
 ---
 
@@ -28,6 +28,7 @@ This project provides a **simple, frontend-only API client** that runs entirely 
   - JavaScript (fetch)
   - Python (requests)
 - **Request History** (last 10 requests)
+- **Query Parameters Support**
 
 ---
 
@@ -95,6 +96,16 @@ Use it in request URLs like this:
 {{BASE_URL}}/users/1
 ```
 ---
+### Query Parameters
+Add below Query Parameter:
+```ini
+postId = 1
+```
+Then call a GET Request to below URL 
+```
+https://jsonplaceholder.typicode.com/comments
+```
+
 ## Project Structure
 ```nix
 src/
@@ -102,6 +113,7 @@ src/
 │   ├── CodeSnippet.jsx     # Generates request code snippets
 │   ├── Env.jsx             # Environment variable manager
 │   ├── History.jsx         # Request history viewer
+|   ├── QueryParams.jsx     # Query Parameters Feature
 │   ├── RequestForm.jsx     # Method selector, URL input, 
 │   ├── Response.jsx        # API response viewer
 ├── App.jsx                 # Main application layout

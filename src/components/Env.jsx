@@ -60,7 +60,7 @@ export default function EnvManager({ envs, setEnvs }) {
 
         <button
           onClick={saveEnv}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          className="bg-black text-white px-4 py-2 rounded"
         >
           {editingKey ? "Update" : "Add"}
         </button>
